@@ -13,13 +13,13 @@ Follow these steps after cloning the repository.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/archanaaravin/AegisAI.git
+git clone https://github.com/archanaaravin/demo-rep.git
 ```
 
 ### 2. Open the project folder
 
 ```bash
-cd AegisAI
+cd demo-rep
 ```
 
 ### 3. Create a Python virtual environment
