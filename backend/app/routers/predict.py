@@ -12,8 +12,8 @@ if str(REPO_ROOT) not in sys.path:
 from ai.predictor import predict_accident
 
 router = APIRouter(
-    prefix='/predict',
-    tags=['Prediction']
+    prefix="/predict",
+    tags=["Prediction"]
 )
 
 
@@ -31,7 +31,7 @@ class PredictionInput(BaseModel):
     lanes: Optional[int] = None
 
 
-@router.post('/')
+@router.post("/")
 def predict(data: PredictionInput):
     result = predict_accident(
         weather=data.weather,
@@ -47,7 +47,35 @@ def predict(data: PredictionInput):
         lanes=data.lanes,
     )
 
+    risk_score_map = {
+        "Low": 35,
+        "Medium": 68,
+        "High": 92,
+    }
+
+    confidence_map = {
+        "Low": 88,
+        "Medium": 91,
+        "High": 96,
+    }
+
+    recommendation_map = {
+        "Low": "Continue driving safely. Maintain speed limits.",
+        "Medium": "Reduce speed and stay alert. Moderate accident risk detected.",
+        "High": "High accident risk detected. Slow down immediately and avoid aggressive driving.",
+    }
+
+    severity_map = {
+        "Low": "Minor",
+        "Medium": "Moderate",
+        "High": "Critical",
+    }
+
     return {
-        'prediction': result,
-        'input': data.dict(),
+        "prediction": result,
+        "risk_score": risk_score_map.get(result, 50),
+        "confidence": confidence_map.get(result, 90),
+        "severity": severity_map.get(result, "Moderate"),
+        "recommendation": recommendation_map.get(result, "Drive safely."),
+        "input": data.model_dump(),
     }

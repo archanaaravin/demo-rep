@@ -322,34 +322,6 @@ nav{
   .gov-grid,.chart-grid,.two-col,.route-results{grid-template-columns:1fr;}
   .navlinks{display:none;}
 }
-.recommended-badge{
-background:#00c853;
-display:inline-block;
-padding:6px 14px;
-border-radius:20px;
-font-size:12px;
-font-weight:700;
-margin-bottom:10px;
-color:#fff;
-}
-
-.safety-score{
-margin:10px 0;
-color:#00d4ff;
-font-size:14px;
-font-weight:600;
-}
-
-.route-ai-reason{
-margin-top:14px;
-padding:12px;
-border-left:4px solid #00d4ff;
-background:rgba(0,212,255,.08);
-border-radius:8px;
-font-size:13px;
-line-height:1.6;
-color:#d7f7ff;
-}
 </style>
 </head>
 <body>
@@ -652,70 +624,6 @@ function animateStats(){
     }, 25);
   });
 }
-function startTelemetry(){
-
-    const riskValues = [62, 68, 71, 75, 79, 83, 77, 69];
-    const confidenceValues = [90.8, 91.6, 92.4, 93.1, 94.2, 95.0];
-    const forecasts = [
-        "Stable",
-        "Increasing",
-        "Heavy Rain Expected",
-        "Peak Traffic Ahead",
-        "Risk Spiking"
-    ];
-
-    const zones = [
-        "Kathipara Junction",
-        "Guindy Bridge",
-        "Anna Nagar",
-        "Velachery",
-        "Poonamallee High Road",
-        "OMR Junction"
-    ];
-
-    const actions = [
-        "Dispatch patrol unit",
-        "Reduce traffic signal interval",
-        "Deploy ambulance",
-        "Increase police surveillance",
-        "Issue driver alert"
-    ];
-
-    setInterval(()=>{
-
-        const risk = riskValues[Math.floor(Math.random()*riskValues.length)];
-        const confidence = confidenceValues[Math.floor(Math.random()*confidenceValues.length)];
-        const forecast = forecasts[Math.floor(Math.random()*forecasts.length)];
-        const zone = zones[Math.floor(Math.random()*zones.length)];
-        const action = actions[Math.floor(Math.random()*actions.length)];
-
-        document.getElementById("riskRingValue").textContent = risk + "%";
-
-        document.getElementById("riskSummary").innerHTML =
-            `Current City Risk: <b>${
-                risk>75 ? "High" :
-                risk>65 ? "Elevated" :
-                "Moderate"
-            }</b><br>AI Confidence <span>${confidence}%</span>`;
-
-        document.querySelectorAll(".ai-row")[0]
-            .querySelector(".pill").textContent = forecast;
-
-        document.querySelectorAll(".ai-row")[1]
-            .querySelector(".ai-row-val").textContent =
-            "Dynamic traffic & weather";
-
-        document.querySelectorAll(".ai-row")[2]
-            .querySelector(".ai-row-val").textContent =
-            zone;
-
-        document.querySelectorAll(".ai-row")[3]
-            .querySelector(".ai-row-val").textContent =
-            action;
-
-    },5000);
-
-}
 
 /* ---------- Leaflet map ---------- */
 function initMap(){
@@ -818,198 +726,21 @@ function renderRouteResults(routeData){
   }
 
   results.innerHTML = routeData.routes.map((route, index) => `
-
-<div class="route-opt ${index===0?'best':''}" data-route-index="${index}">
-
-    ${index===0?`
-        <div class="recommended-badge">
-            ⭐ AI RECOMMENDED
-        </div>
-    `:''}
-
-    <div class="route-opt-title">${route.title}</div>
-
-    ${index===0?`
-        <div class="safety-score">
-            🛡️ Safety Score <b>96 / 100</b>
-        </div>
-    `:''}
-
-    <div class="route-opt-meta">
-        <span>📏 Distance</span>
-        <span>${route.distance_km} km</span>
+    <div class="route-opt ${index === 0 ? 'best' : ''}" data-route-index="${index}">
+      <div class="route-opt-title">${route.title}</div>
+      <div class="route-opt-meta"><span>Distance</span><span>${route.distance_km} km</span></div>
+      <div class="route-opt-meta"><span>ETA</span><span>${route.eta_min} min</span></div>
+      <div class="route-opt-meta"><span>Risk Index</span><span>${route.risk_index}</span></div>
+      <div class="route-opt-meta"><span>Path</span><span style="color:#8b93a7;font-size:11px;">${route.route_path}</span></div>
     </div>
-
-    <div class="route-opt-meta">
-        <span>⏱ ETA</span>
-        <span>${route.eta_min} min</span>
-    </div>
-
-    <div class="route-opt-meta">
-        <span>⚠ Risk</span>
-        <span>${route.risk_index}</span>
-    </div>
-
-    <div class="route-opt-meta">
-        <span>🛣 Route</span>
-        <span style="color:#8b93a7;font-size:11px;">
-            ${route.route_path}
-        </span>
-    </div>
-
-    ${index===0?`
-        <div class="route-ai-reason">
-            🤖 AI Recommendation:
-            This route avoids major accident hotspots,
-            school zones and peak-hour congestion while
-            maintaining a balanced travel time.
-        </div>
-    `:''}
-
-</div>
-
-`).join('');
+  `).join('');
 
   results.querySelectorAll('.route-opt').forEach(card => {
-
     card.addEventListener('click', ()=>{
-
-        results.querySelectorAll('.route-opt').forEach(c=>c.classList.remove('selected'));
-        card.classList.add('selected');
-
-        const index = Number(card.dataset.routeIndex);
-        const route = routeData.routes[index];
-        
-
-        if(window.routeLayer){
-            window._map.removeLayer(window.routeLayer);
-        }
-
-        const start = [
-    route.start.latitude,
-    route.start.longitude
-];
-
-const end = [
-    route.end.latitude,
-    route.end.longitude
-];
-// Chennai demo waypoints
-let routePoints = [start, end];
-
-const from = route.start.name.toLowerCase();
-const to = route.end.name.toLowerCase();
-
-// Anna Salai -> LB Road
-if(from.includes("anna") && to.includes("lb")){
-    routePoints = [
-        start,
-        [13.0335,80.2408],   // Teynampet
-        [13.0248,80.2512],   // Saidapet
-        [13.0125,80.2575],   // Adyar Bridge
-        end
-    ];
-}
-
-// Anna Salai -> Marina Beach
-else if(from.includes("anna") && to.includes("marina")){
-    routePoints = [
-        start,
-        [13.0410,80.2455],
-        [13.0510,80.2615],
-        [13.0555,80.2758],
-        end
-    ];
-}
-
-// Guindy -> Velachery
-else if(from.includes("guindy") && to.includes("velachery")){
-    routePoints = [
-        start,
-        [13.0075,80.2210],
-        [12.9955,80.2295],
-        [12.9825,80.2215],
-        end
-    ];
-}
-
-// Arcot Road -> Marina Beach
-else if(from.includes("arcot") && to.includes("marina")){
-    routePoints = [
-        start,
-        [13.0345,80.2150],
-        [13.0430,80.2390],
-        [13.0500,80.2625],
-        end
-    ];
-}
-
-// Create a few bend points so the route looks realistic
-// Difference between start and end
-const dLat = end[0] - start[0];
-const dLng = end[1] - start[1];
-
-// Bend points to imitate road curvature
-const mid1 = [
-    start[0] + dLat * 0.18 + 0.006,
-    start[1] + dLng * 0.20 - 0.008
-];
-
-const mid2 = [
-    start[0] + dLat * 0.42 - 0.004,
-    start[1] + dLng * 0.48 + 0.010
-];
-
-const mid3 = [
-    start[0] + dLat * 0.68 + 0.005,
-    start[1] + dLng * 0.74 - 0.006
-];
-
-const mid4 = [
-    start[0] + dLat * 0.87 - 0.003,
-    start[1] + dLng * 0.91 + 0.004
-];
-
-window.routeLayer = L.polyline(
-    routePoints,
-    {
-        color:"#00E5FF",
-        weight:6,
-        opacity:0.9,
-        smoothFactor:3
-    }
-).addTo(window._map);
-
-// Mark start and destination
-if(window.routeMarkers){
-    window.routeMarkers.forEach(marker=>window._map.removeLayer(marker));
-}
-
-window.routeMarkers = [];
-
-const startMarker = L.circleMarker(start,{
-    radius:7,
-    color:"#00ff66",
-    fillColor:"#00ff66",
-    fillOpacity:1
-}).addTo(window._map);
-
-const endMarker = L.circleMarker(end,{
-    radius:7,
-    color:"#ff3b3b",
-    fillColor:"#ff3b3b",
-    fillOpacity:1
-}).addTo(window._map);
-
-window.routeMarkers.push(startMarker,endMarker);
-
-        window._map.fitBounds(window.routeLayer.getBounds(),{
-            padding:[40,40]
-        });
-
+      results.querySelectorAll('.route-opt').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
     });
-
-});
+  });
 }
 
 async function calculateRoute(){
@@ -1588,7 +1319,6 @@ document.getElementById('predictBtn').addEventListener('click', runPrediction);
 document.addEventListener('DOMContentLoaded', ()=>{
   initMap();
   animateStats();
-  startTelemetry();
   updateReportCount();
   buildCharts();
   fetchGovernmentData();
