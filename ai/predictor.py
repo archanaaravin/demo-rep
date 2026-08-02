@@ -19,6 +19,10 @@ LEGACY_PATHS = {
 }
 
 model = joblib.load(MODEL_PATH)
+# API requests are short, individual inference jobs. A single worker avoids
+# spawning processes per request on Windows and in restricted runtimes.
+if hasattr(model, "n_jobs"):
+    model.n_jobs = 1
 encoders = {}
 feature_columns = None
 legacy_mode = False
@@ -27,7 +31,7 @@ dataset_defaults = None
 if LABEL_ENCODERS_PATH.exists() and FEATURE_COLUMNS_PATH.exists():
     encoders = joblib.load(LABEL_ENCODERS_PATH)
     feature_columns = joblib.load(FEATURE_COLUMNS_PATH)
-    print("✅ Predictor loaded generic model artifacts.")
+    print("Predictor loaded generic model artifacts.")
 elif all(path.exists() for path in LEGACY_PATHS.values()):
     encoders["weather"] = joblib.load(LEGACY_PATHS["weather"])
     encoders["traffic"] = joblib.load(LEGACY_PATHS["traffic"])
@@ -35,7 +39,7 @@ elif all(path.exists() for path in LEGACY_PATHS.values()):
     encoders["time"] = joblib.load(LEGACY_PATHS["time"])
     encoders["risk"] = joblib.load(LEGACY_PATHS["risk"])
     legacy_mode = True
-    print("✅ Predictor loaded legacy model artifacts.")
+    print("Predictor loaded legacy model artifacts.")
 else:
     raise FileNotFoundError("Predictor artifacts are missing. Please run ai/train_model.py and make sure model files exist.")
 
@@ -131,7 +135,10 @@ def predict_accident(weather=None, traffic=None, road=None, speed=None, time=Non
             encoded = _coerce_numeric(raw_value)
         feature_vector.append(encoded)
 
-    prediction = model.predict([feature_vector])
+    # Keep inference inside the API process. Some Windows deployments prevent
+    # joblib from spawning worker processes for an individual web request.
+    with joblib.parallel_backend("threading"):
+        prediction = model.predict([feature_vector])
     if "AccidentRisk" in encoders:
         prediction = encoders["AccidentRisk"].inverse_transform(prediction)
     elif "risk" in encoders:

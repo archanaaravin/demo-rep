@@ -766,14 +766,15 @@ document.getElementById('toggleHeatmapBtn').addEventListener('click', async func
 
     try {
 
-        const response = await fetch(`${API_BASE}/hotspots`);
+        const response = await fetch(`${API_BASE}/accidents/hotspots`);
+        if(!response.ok) throw new Error(`Status ${response.status}`);
         const hotspots = await response.json();
 
         const points = hotspots.map(h => [
-            h.latitude,
-            h.longitude,
+            h.avg_latitude,
+            h.avg_longitude,
             h.total_accidents / 1500
-        ]);
+        ]).filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude));
 
         window.heatLayer = L.heatLayer(points, {
             radius: 35,
@@ -1317,7 +1318,11 @@ function buildCharts(){
   });
 }
 
-const API_BASE = 'http://127.0.0.1:8000';
+// Use the FastAPI server that delivered this page. The fallback keeps direct
+// local-file previews working during development.
+const API_BASE = window.location.origin && window.location.origin !== 'null'
+  ? window.location.origin
+  : 'http://127.0.0.1:8000';
 console.debug('API_BASE set to', API_BASE);
 
 async function fetchDatasetSummary(){
