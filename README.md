@@ -1,235 +1,179 @@
-🛡️ AegisAI
+# AegisAI
 
-	⁠*AI-powered Road Accident Hotspot Prediction & Prevention Platform*
+AI-powered Road Accident Hotspot Prediction & Prevention Platform.
 
-AegisAI is an intelligent road-safety platform designed to identify accident-prone areas, analyze risk patterns, and support proactive accident-prevention strategies using artificial intelligence and data-driven insights.
-
-The goal of AegisAI is to move beyond reactive road-safety analysis by helping stakeholders detect potential accident hotspots before they become high-risk zones.
+This repository contains a frontend dashboard, a FastAPI backend, and AI dataset tools to visualize and report roadway incidents.
 
 ---
 
-## 🌍 The Problem
+## 🔧 Setup Guide
 
-Road accidents continue to create significant social, economic, and public-safety challenges. Traditional accident analysis often focuses on historical incidents after they occur, making it difficult to take preventive action early.
+Follow these steps after cloning the repository.
 
-AegisAI aims to address this challenge by using AI and historical road-safety data to:
+### 1. Clone the repository
 
-•⁠  ⁠Identify accident-prone locations
-•⁠  ⁠Detect geographical and temporal risk patterns
-•⁠  ⁠Estimate potential accident risk
-•⁠  ⁠Highlight emerging accident hotspots
-•⁠  ⁠Support proactive road-safety planning and intervention
-
----
-
-## ✨ Key Objectives
-
-AegisAI is being developed to provide:
-
-•⁠  ⁠🔍 *Accident Hotspot Identification*
-  Detect locations with a high concentration of historical road accidents.
-
-•⁠  ⁠🤖 *AI-Powered Risk Analysis*
-  Use machine-learning models to identify patterns and estimate accident risk.
-
-•⁠  ⁠📍 *Geospatial Insights*
-  Visualize accident-prone areas and geographical risk distributions.
-
-•⁠  ⁠📊 *Data-Driven Decision Support*
-  Provide actionable insights for transportation authorities, city planners, and road-safety organizations.
-
-•⁠  ⁠🚨 *Proactive Prevention*
-  Help stakeholders prioritize safety interventions before accident risk escalates.
-
----
-
-## 🏗️ High-Level Architecture
-
-⁠ mermaid
-flowchart LR
-    A[Road Accident Data] --> B[Data Processing & Analysis]
-    B --> C[AI / Machine Learning Engine]
-    C --> D[Hotspot & Risk Prediction]
-    D --> E[Backend Services]
-    E --> F[Interactive Frontend]
-    F --> G[Road-Safety Insights]
-
-    G --> H[Transportation Authorities]
-    G --> I[Urban Planners]
-    G --> J[Road-Safety Teams]
- ⁠
-
----
-
-## 📂 Repository Structure
-
-⁠ text
-AegisAI/
-│
-├── ai/
-│   └── AI and machine-learning components
-│
-├── frontend/
-│   └── User interface and visualization components
-│
-├── backend_old/
-│   └── Previous backend implementation
-│
-├── .gitattributes
-│
-└── README.md
- ⁠
-
-	⁠The repository is currently under active development. Additional implementation details, services, models, and documentation will be added as the platform evolves.
-
----
-
-## 🔄 Proposed Workflow
-
-⁠ mermaid
-flowchart TD
-    A[Collect Road Accident Data] --> B[Clean & Prepare Data]
-    B --> C[Analyze Historical Patterns]
-    C --> D[Train AI/ML Models]
-    D --> E[Predict Accident Risk]
-    E --> F[Identify High-Risk Hotspots]
-    F --> G[Visualize Insights]
-    G --> H[Support Preventive Action]
- ⁠
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the Repository
-
-⁠ bash
+```bash
 git clone https://github.com/archanaaravin/AegisAI.git
- ⁠
+```
 
-### 2. Navigate to the Project
+### 2. Open the project folder
 
-⁠ bash
+```bash
 cd AegisAI
- ⁠
+```
 
-### 3. Explore the Project Components
+### 3. Create a Python virtual environment
 
-⁠ bash
-cd ai
- ⁠
+On Windows PowerShell:
 
-⁠ bash
-cd ../frontend
- ⁠
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-⁠ bash
-cd ../backend_old
- ⁠
+On Windows CMD:
 
-Installation and execution instructions will be expanded as the application components are implemented and integrated.
+```cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
+```
 
----
+On Git Bash / WSL:
 
-## 🧠 AI and Analytics
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
 
-The AI layer is intended to analyze road-safety data and identify relationships between accident occurrence and factors such as:
+### 4. Install backend dependencies
 
-•⁠  ⁠Geographic location
-•⁠  ⁠Historical accident frequency
-•⁠  ⁠Time and date
-•⁠  ⁠Road characteristics
-•⁠  ⁠Traffic conditions
-•⁠  ⁠Environmental conditions
-•⁠  ⁠Other available accident-related variables
+```bash
+pip install fastapi uvicorn sqlalchemy pydantic
+```
 
-The resulting insights can be used to identify high-risk regions and support preventive road-safety measures.
+If you want to save the installed dependencies after testing, create a requirements file:
 
----
-
-## 🎯 Potential Use Cases
-
-AegisAI can support a range of road-safety applications:
-
-| Stakeholder                   | Potential Use                                   |
-| ----------------------------- | ----------------------------------------------- |
-| 🚦 Transportation Authorities | Identify and prioritize high-risk road segments |
-| 🏙️ City and Urban Planners   | Support safer infrastructure planning           |
-| 🚓 Emergency Services         | Improve preparedness in accident-prone areas    |
-| 🛣️ Road-Safety Organizations | Target awareness and prevention initiatives     |
-| 📊 Data Analysts              | Explore accident patterns and risk trends       |
+```bash
+pip freeze > backend/requirements.txt
+```
 
 ---
 
-## 🛣️ Roadmap
+## 🚀 Run the application
 
-•⁠  ⁠[ ] Integrate road accident datasets
-•⁠  ⁠[ ] Build data-cleaning and preprocessing pipelines
-•⁠  ⁠[ ] Develop accident hotspot detection models
-•⁠  ⁠[ ] Implement accident-risk prediction
-•⁠  ⁠[ ] Add geospatial visualization
-•⁠  ⁠[ ] Build interactive analytics dashboards
-•⁠  ⁠[ ] Integrate AI services with the backend
-•⁠  ⁠[ ] Connect frontend and backend services
-•⁠  ⁠[ ] Add model evaluation and performance monitoring
-•⁠  ⁠[ ] Deploy the AegisAI platform
+### 1. Start the backend server
+
+From the repository root:
+
+```bash
+cd backend
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+The backend API will be available at:
+
+- `http://127.0.0.1:8000`
+- `http://127.0.0.1:8000/frontend`
+- `http://127.0.0.1:8000/app`
+
+### 2. Open the frontend dashboard
+
+Open this URL in your browser:
+
+```text
+http://127.0.0.1:8000/frontend
+```
+
+This loads the dashboard and connects it to the backend APIs.
+
+---
+
+## 📁 Project Structure
+
+- `ai/` — Dataset and AI utilities
+- `backend/` — FastAPI backend and API routers
+- `frontend/` — Single-page dashboard UI
+
+---
+
+## 🧪 Available APIs
+
+- `GET /accidents/summary` — Dataset summary with counts
+- `GET /accidents/history` — Recent incident history from the dataset
+- `POST /accidents/report` — Save a citizen incident report to JSON
+- `GET /accidents/reports` — Retrieve saved incident reports
+- `GET /accidents/route` — Calculate route options between locations
+- `POST /predict/` — Run AI risk prediction
+
+---
+
+## 📝 Report Submission
+
+Use the frontend report modal to submit an incident report.
+The backend saves reports to `backend/data/reports.json` and updates the `Citizen Reports Processed` counter.
+
+---
+
+## ⚠️ Notes
+
+- If the frontend does not load, confirm the backend server is running on port `8000`.
+- If report submission fails, refresh the page and verify the backend logs.
+- If a dependency is missing, rerun `pip install fastapi uvicorn sqlalchemy pydantic`.
+
+---
+
+## 💡 Quick Commands
+
+Activate the virtual environment:
+
+```bash
+# PowerShell
+.\.venv\Scripts\Activate.ps1
+
+# Cmd
+.venv\Scripts\activate.bat
+
+# Bash / WSL
+source .venv/bin/activate
+```
+
+Run the backend:
+
+```bash
+cd backend
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome.
+1. Fork the repository
+2. Create a new branch
 
-To contribute:
-
-1.⁠ ⁠Fork the repository
-2.⁠ ⁠Create a new feature branch
-
-⁠ bash
+```bash
 git checkout -b feature/your-feature-name
- ⁠
+```
 
-3.⁠ ⁠Make your changes
-4.⁠ ⁠Commit your changes
+3. Make your changes
+4. Commit your work
 
-⁠ bash
-git commit -m "Add your feature"
- ⁠
+```bash
+git commit -m "Add feature"
+```
 
-5.⁠ ⁠Push the branch
+5. Push the branch
 
-⁠ bash
+```bash
 git push origin feature/your-feature-name
- ⁠
+```
 
-6.⁠ ⁠Open a Pull Request
+6. Open a pull request
 
 ---
 
 ## 📄 License
 
-A license has not yet been added to this repository.
+This repository currently does not include a license file.
 
-If you plan to make AegisAI open source, consider adding an appropriate license such as the MIT License or Apache License 2.0.
-
----
-
-## 👩‍💻 Author
-
-*Archana Aravin*
-
-GitHub: [@archanaaravin](https://github.com/archanaaravin)
-
----
-
-## ⭐ Support
-
-If you find AegisAI interesting or useful, consider giving the repository a ⭐.
-
-Your support helps encourage continued development of AI-driven solutions for safer roads.
-
----
-
-<p align="center">
-  <b>🛡️ AegisAI — Predicting Risk. Enabling Prevention. Building Safer Roads.</b>
-</p>
+If you make this project public, add a license such as MIT or Apache 2.0.

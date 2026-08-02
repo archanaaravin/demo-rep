@@ -181,9 +181,10 @@ nav{
 .route-results{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
 .route-results.show{display:grid;animation:fadeUp .35s ease;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.route-opt{background:var(--glass-hi);border:1px solid var(--border);border-radius:10px;padding:12px;transition:transform .2s ease;}
-.route-opt:hover{transform:translateY(-2px);}
-.route-opt.best{border-color:rgba(34,197,94,0.4);box-shadow:0 0 24px -12px rgba(34,197,94,0.6);}
+.route-opt{background:var(--glass-hi);border:1px solid var(--border);border-radius:10px;padding:12px;transition:transform .2s ease;cursor:pointer;}
+  .route-opt:hover{transform:translateY(-2px);}
+  .route-opt.best{border-color:rgba(34,197,94,0.4);box-shadow:0 0 24px -12px rgba(34,197,94,0.6);}
+  .route-opt.selected{border-color:rgba(6,182,212,0.6);background:rgba(6,182,212,0.08);}
 .route-opt-title{font-size:12.5px;font-weight:600;margin-bottom:8px;}
 .route-opt-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim);padding:2px 0;}
 
@@ -344,15 +345,12 @@ nav{
   <!-- SAFETY ROUTER AT THE TOP SIDE -->
   <div class="route-dock glass">
     <div class="route-row">
-      <div class="route-field"><span class="dot-a"></span><input id="routeFrom" placeholder="Starting point — e.g. T. Nagar"></div>
-      <div class="route-field"><span class="dot-b"></span><input id="routeTo" placeholder="Destination — e.g. Airport"></div>
+      <div class="route-field"><span class="dot-a"></span><input id="routeFrom" list="locationOptions" placeholder="Starting point — e.g. Marina Beach Road"></div>
+      <div class="route-field"><span class="dot-b"></span><input id="routeTo" list="locationOptions" placeholder="Destination — e.g. Poonamallee High Road"></div>
       <button class="route-btn" id="findRouteBtn">Calculate Safest Route</button>
     </div>
-    <div class="route-results" id="routeResults">
-      <div class="route-opt best"><div class="route-opt-title" style="color:var(--green)">🟢 AEGIS Safest Route</div><div class="route-opt-meta"><span>Distance</span><span>14.2 km</span></div><div class="route-opt-meta"><span>ETA</span><span>32 min</span></div><div class="route-opt-meta"><span>Risk Index</span><span>Low (12%)</span></div></div>
-      <div class="route-opt"><div class="route-opt-title" style="color:var(--orange)">🟠 Balanced Route</div><div class="route-opt-meta"><span>Distance</span><span>11.8 km</span></div><div class="route-opt-meta"><span>ETA</span><span>24 min</span></div><div class="route-opt-meta"><span>Risk Index</span><span>Medium (48%)</span></div></div>
-      <div class="route-opt"><div class="route-opt-title" style="color:var(--red)">🔴 Direct Fast Route</div><div class="route-opt-meta"><span>Distance</span><span>10.4 km</span></div><div class="route-opt-meta"><span>ETA</span><span>21 min</span></div><div class="route-opt-meta"><span>Risk Index</span><span>High (86%)</span></div></div>
-    </div>
+    <datalist id="locationOptions"></datalist>
+    <div class="route-results" id="routeResults"><div class="route-opt" style="padding:18px;color:var(--text-dim)">Enter a start and destination to calculate routes.</div></div>
   </div>
 
   <!-- SPLIT GRID: MAP ON LEFT, MENUS/AI ON RIGHT -->
@@ -388,19 +386,30 @@ nav{
 
     <!-- RIGHT SIDE: MENUS, AI RISK ENGINE, & METRICS -->
     <div class="dashboard-sidebar">
-      <div class="ai-panel glass">
+      <div class="ai-panel glass" id="predictionPanel">
         <div class="ai-head"><div class="ai-orb"></div><div><div class="ai-title">AI Risk Engine v5.1</div><div class="ai-sub">Real-time telemetric inference</div></div></div>
         <div class="ring-wrap">
           <div class="ring">
             <svg width="70" height="70"><circle cx="35" cy="35" r="29" stroke="rgba(255,255,255,0.08)" stroke-width="6.5" fill="none"></circle><circle cx="35" cy="35" r="29" stroke="var(--red)" stroke-width="6.5" fill="none" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="52"></circle></svg>
-            <div class="ring-val">71%</div>
+            <div class="ring-val" id="riskRingValue">71%</div>
           </div>
-          <div class="ring-caption">Current City Risk: <b>Elevated</b><br>AI Confidence <span>94.2%</span></div>
+          <div class="ring-caption" id="riskSummary">Current City Risk: <b>Elevated</b><br>AI Confidence <span>94.2%</span></div>
         </div>
         <div class="ai-row"><span class="ai-row-label">Next 3h Forecast</span><span class="ai-row-val"><span class="pill pill-orange">↑ Risk Spiking</span></span></div>
         <div class="ai-row"><span class="ai-row-label">Primary Hazard</span><span class="ai-row-val">Visibility drop &amp; rain</span></div>
         <div class="ai-row"><span class="ai-row-label">Most Critical Zone</span><span class="ai-row-val">Kathipara Junction</span></div>
         <div class="ai-row"><span class="ai-row-label">Suggested Action</span><span class="ai-row-val" style="color:#86efac">Dispatch patrol unit</span></div>
+      </div>
+
+      <div class="stat-card glass" id="predictionCard" style="padding:18px; display:flex; flex-direction:column; gap:12px;">
+        <div class="stat-label" style="margin-bottom:4px;">Model Prediction</div>
+        <input class="form-input" id="predictWeather" placeholder="Weather (Sunny, Rainy, etc.)">
+        <input class="form-input" id="predictTraffic" placeholder="Traffic Density (High, Medium, Low)">
+        <input class="form-input" id="predictRoadType" placeholder="Road Type (Arterial, Service Road)">
+        <input class="form-input" id="predictSpeed" placeholder="Speed Limit" type="number">
+        <input class="form-input" id="predictTimeOfDay" placeholder="Time of Day (Morning, Afternoon)">
+        <button class="route-btn" id="predictBtn">Run Prediction</button>
+        <div id="predictResult" style="color:#8b93a7; font-size:0.95rem; line-height:1.5; min-height:40px;">Enter values and click Run Prediction.</div>
       </div>
 
       <div class="stat-card glass" style="display:flex; align-items:center; justify-content:space-between; padding:16px;">
@@ -426,11 +435,8 @@ nav{
         <div style="overflow-x:auto;">
           <table class="gov-table">
             <thead><tr><th>Junction</th><th>Risk Level</th><th>Primary Factor</th><th>Recommended Action</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td><b>Kathipara Junction</b></td><td><span class="pill pill-red">Critical</span></td><td>Overspeeding / Merge</td><td>Install automated speed radar</td><td><span class="pill pill-blue">Pending Review</span></td></tr>
-              <tr><td><b>Anna Nagar Roundabout</b></td><td><span class="pill pill-orange">Elevated</span></td><td>Signal jumping</td><td>Extend yellow light buffer</td><td><span class="pill pill-green">Actioned</span></td></tr>
-              <tr><td><b>ECR Thiruvanmiyur</b></td><td><span class="pill pill-red">Critical</span></td><td>Low visibility / Fog</td><td>Activate smart fog warning lights</td><td><span class="pill pill-blue">Pending Review</span></td></tr>
-              <tr><td><b>Velachery Main Road</b></td><td><span class="pill pill-orange">Elevated</span></td><td>Waterlogging risk</td><td>Deploy stormwater drainage pump</td><td><span class="pill pill-green">Actioned</span></td></tr>
+            <tbody id="govHotspotTableBody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">Loading hotspot interventions…</td></tr>
             </tbody>
           </table>
         </div>
@@ -452,7 +458,7 @@ nav{
       <div class="chart-card glass"><h4>Monthly Accident Volume</h4><p>Citywide incident count over last 12 months</p><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div>
       <div class="chart-card glass"><h4>Severity Breakdown</h4><p>Minor collisions vs major &amp; fatal</p><div class="chart-box"><canvas id="chartSeverity"></canvas></div></div>
       <div class="chart-card glass"><h4>Time-of-Day Risk Density</h4><p>Peak hazard hours across the network</p><div class="chart-box"><canvas id="chartTime"></canvas></div></div>
-      <div class="chart-card glass"><h4>AI Prediction Accuracy</h4><p>Trailing 8 weeks validation score</p><div class="chart-box"><canvas id="chartAccuracy"></canvas></div></div>
+      <div class="chart-card glass"><h4>AI Prediction Accuracy</h4><p id="accuracySummary">Trailing 8 weeks validation score</p><div class="chart-box"><canvas id="chartAccuracy"></canvas></div></div>
     </div>
   </div>
 </div>
@@ -463,9 +469,9 @@ nav{
     <div class="page-head"><div class="page-eyebrow">Audit &amp; Records</div><div class="page-title">Incident History &amp; Logs</div><div class="page-desc">Every logged citizen report and sensor-detected collision, reconstructed with environmental conditions, photo evidence, and AI telemetry.</div></div>
     <div class="filter-row" id="filterRow">
       <div class="filter-chip on" data-f="all">All Incidents</div>
-      <div class="filter-chip" data-f="High">Critical Severity</div>
-      <div class="filter-chip" data-f="Medium">Elevated Severity</div>
-      <div class="filter-chip" data-f="Low">Minor Severity</div>
+      <div class="filter-chip" data-f="Fatal">Fatal Severity</div>
+      <div class="filter-chip" data-f="Major">Major Severity</div>
+      <div class="filter-chip" data-f="Minor">Minor Severity</div>
     </div>
     <div class="timeline" id="timeline"></div>
   </div>
@@ -642,7 +648,51 @@ document.getElementById('toggleHeatmapBtn').addEventListener('click', function()
 });
 
 /* ---------- Route planner ---------- */
-document.getElementById('findRouteBtn').addEventListener('click', ()=>{
+async function fetchLocationOptions(query = ''){
+  try {
+    const url = `${API_BASE}/accidents/locations` + (query ? `?query=${encodeURIComponent(query)}` : '');
+    const response = await fetch(url);
+    if(!response.ok) throw new Error(`Status ${response.status}`);
+    const locations = await response.json();
+    const datalist = document.getElementById('locationOptions');
+    datalist.innerHTML = '';
+    locations.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      datalist.appendChild(option);
+    });
+  } catch(err) {
+    console.warn('Unable to load location suggestions:', err);
+  }
+}
+
+function renderRouteResults(routeData){
+  const results = document.getElementById('routeResults');
+  results.classList.add('show');
+  if(!routeData?.routes?.length){
+    results.innerHTML = '<div class="route-opt" style="padding:18px;color:var(--text-dim)">No route options available for the selected locations.</div>';
+    return;
+  }
+
+  results.innerHTML = routeData.routes.map((route, index) => `
+    <div class="route-opt ${index === 0 ? 'best' : ''}" data-route-index="${index}">
+      <div class="route-opt-title">${route.title}</div>
+      <div class="route-opt-meta"><span>Distance</span><span>${route.distance_km} km</span></div>
+      <div class="route-opt-meta"><span>ETA</span><span>${route.eta_min} min</span></div>
+      <div class="route-opt-meta"><span>Risk Index</span><span>${route.risk_index}</span></div>
+      <div class="route-opt-meta"><span>Path</span><span style="color:#8b93a7;font-size:11px;">${route.route_path}</span></div>
+    </div>
+  `).join('');
+
+  results.querySelectorAll('.route-opt').forEach(card => {
+    card.addEventListener('click', ()=>{
+      results.querySelectorAll('.route-opt').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  });
+}
+
+async function calculateRoute(){
   const from = document.getElementById('routeFrom').value.trim();
   const to = document.getElementById('routeTo').value.trim();
   const results = document.getElementById('routeResults');
@@ -650,8 +700,27 @@ document.getElementById('findRouteBtn').addEventListener('click', ()=>{
     alert('Enter both a starting point and a destination.');
     return;
   }
+
+  results.innerHTML = '<div class="route-opt" style="padding:18px;color:var(--text-dim)">Calculating route options...</div>';
   results.classList.add('show');
-});
+
+  try {
+    const response = await fetch(`${API_BASE}/accidents/route?from_location=${encodeURIComponent(from)}&to_location=${encodeURIComponent(to)}`);
+    if(!response.ok){
+      const errorText = await response.text();
+      throw new Error(errorText || `Status ${response.status}`);
+    }
+    const routeData = await response.json();
+    renderRouteResults(routeData);
+  } catch(err){
+    console.warn('Unable to calculate route:', err);
+    results.innerHTML = `<div class="route-opt" style="padding:18px;color:var(--text-dim)">Unable to calculate route: ${err.message}</div>`;
+  }
+}
+
+document.getElementById('findRouteBtn').addEventListener('click', calculateRoute);
+document.getElementById('routeFrom').addEventListener('input', e => fetchLocationOptions(e.target.value));
+document.getElementById('routeTo').addEventListener('input', e => fetchLocationOptions(e.target.value));
 
 /* ================= CITIZEN PHOTO UPLOADER ================= */
 const uploadZone   = document.getElementById('uploadZone');
@@ -736,7 +805,7 @@ document.getElementById('openReportModalBtn').addEventListener('click', openModa
 document.getElementById('cancelReportBtn').addEventListener('click', closeModal);
 reportModal.addEventListener('click', e=>{ if(e.target === reportModal) closeModal(); });
 
-document.getElementById('submitReportBtn').addEventListener('click', ()=>{
+document.getElementById('submitReportBtn').addEventListener('click', async ()=>{
   const loc  = document.getElementById('repLoc').value.trim();
   const type = document.getElementById('repType').value;
   const sev  = document.getElementById('repSev').value;
@@ -749,23 +818,43 @@ document.getElementById('submitReportBtn').addEventListener('click', ()=>{
 
   const report = {
     id: Date.now(),
-    loc, type, sev, desc,
+    loc,
+    type,
+    severity: sev,
+    desc,
     photos: uploadedPhotos.map(p=>p.dataUrl),
     time: new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
   };
 
-  const stored = JSON.parse(localStorage.getItem('aegisReports') || '[]');
-  stored.unshift(report);
-  localStorage.setItem('aegisReports', JSON.stringify(stored));
+  try {
+    const response = await fetch(`${API_BASE}/accidents/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(report),
+    });
 
-  document.getElementById('repLoc').value = '';
-  document.getElementById('repDesc').value = '';
-  resetUploader();
-  closeModal();
+    if(!response.ok){
+      const errorText = await response.text();
+      throw new Error(errorText || `Status ${response.status}`);
+    }
 
-  showAlert(`🚨 New citizen report received: ${type} at ${loc}${report.photos.length ? ` (${report.photos.length} photo${report.photos.length>1?'s':''})` : ''}.`);
-  renderTimeline();
-  updateReportCount();
+    const result = await response.json();
+    const stored = JSON.parse(localStorage.getItem('aegisReports') || '[]');
+    stored.unshift(report);
+    localStorage.setItem('aegisReports', JSON.stringify(stored));
+
+    document.getElementById('repLoc').value = '';
+    document.getElementById('repDesc').value = '';
+    resetUploader();
+    closeModal();
+
+    showAlert(`🚨 New citizen report received: ${type} at ${loc}${report.photos.length ? ` (${report.photos.length} photo${report.photos.length>1?'s':''})` : ''}.`);
+    renderTimeline();
+    updateReportCount({ report_count: result.report_count });
+  } catch(err) {
+    showAlert(`Report submission failed: ${err.message}`);
+    console.warn('Report submission failed', err);
+  }
 });
 
 function showAlert(msg){
@@ -786,26 +875,20 @@ function openLightbox(src){
 }
 
 /* ================= INCIDENT HISTORY / TIMELINE ================= */
-const seedIncidents = [
-  { id:1, loc:'Kathipara Junction', type:'Overspeeding Hotspot', sev:'High', desc:'Multiple near-miss collisions reported during evening peak traffic.', photos:[], time:'28 Jul, 18:40' },
-  { id:2, loc:'Velachery Main Road', type:'Waterlogging / Flooding', sev:'Medium', desc:'Ankle-deep water accumulation near the signal after heavy rain.', photos:[], time:'27 Jul, 09:12' },
-  { id:3, loc:'ECR Thiruvanmiyur', type:'Severe Pothole / Road Damage', sev:'High', desc:'Large pothole on the inner lane causing two-wheelers to swerve.', photos:[], time:'25 Jul, 21:05' },
-  { id:4, loc:'Anna Nagar Roundabout', type:'Broken Traffic Signal', sev:'Low', desc:'Signal stuck on red for the westbound approach.', photos:[], time:'22 Jul, 14:30' },
-];
-
+let historyRecords = [];
 let currentFilter = 'all';
 
 function getAllIncidents(){
   const stored = JSON.parse(localStorage.getItem('aegisReports') || '[]');
-  return [...stored, ...seedIncidents];
+  return [...stored, ...historyRecords];
 }
 
-const sevColor = { High:'var(--red)', Medium:'var(--orange)', Low:'var(--green)' };
-const sevPill  = { High:'pill-red', Medium:'pill-orange', Low:'pill-green' };
+const sevColor = { Fatal:'var(--red)', Major:'var(--orange)', Minor:'var(--green)' };
+const sevPill  = { Fatal:'pill-red', Major:'pill-orange', Minor:'pill-green' };
 
 function renderTimeline(){
   const timeline = document.getElementById('timeline');
-  const all = getAllIncidents().filter(i=> currentFilter==='all' || i.sev===currentFilter);
+  const all = getAllIncidents().filter(i=> currentFilter==='all' || i.severity===currentFilter);
   timeline.innerHTML = '';
 
   if(all.length === 0){
@@ -817,11 +900,11 @@ function renderTimeline(){
     const item = document.createElement('div');
     item.className = 'tl-item glass';
     item.innerHTML = `
-      <div class="tl-dot" style="background:${sevColor[inc.sev]}"></div>
+      <div class="tl-dot" style="background:${sevColor[inc.severity]}"></div>
       <div class="tl-body">
         <div class="tl-top">
           <span class="tl-loc">${inc.loc}</span>
-          <span class="pill ${sevPill[inc.sev]}">${inc.sev} Severity</span>
+          <span class="pill ${sevPill[inc.severity]}">${inc.severity} Severity</span>
         </div>
         <div class="tl-time">${inc.type} · ${inc.time}</div>
         <div class="tl-desc">${inc.desc || 'No additional description provided.'}</div>
@@ -844,11 +927,11 @@ document.getElementById('filterRow').addEventListener('click', e=>{
   renderTimeline();
 });
 
-function updateReportCount(){
-  const stored = JSON.parse(localStorage.getItem('aegisReports') || '[]');
+function updateReportCount(summary){
   const el = document.getElementById('citizenReportCount');
-  el.dataset.target = stored.length;
-  el.textContent = stored.length;
+  const count = summary?.report_count ?? Number(el.dataset.target || 0);
+  el.dataset.target = count;
+  el.textContent = count;
 }
 
 /* ================= SOS / EMERGENCY ================= */
@@ -861,14 +944,14 @@ function buildCharts(){
   const dark = { grid:{ color:'rgba(255,255,255,0.06)' }, ticks:{ color:'#8b93a7', font:{ size:10 } } };
   const legendOff = { legend:{ display:false } };
 
-  new Chart(document.getElementById('chartGovResources'), {
+  window.govResourcesChart = new Chart(document.getElementById('chartGovResources'), {
     type:'doughnut',
     data:{ labels:['Patrol Units','Ambulances','Traffic Marshals','Tow Units'],
       datasets:[{ data:[12,6,20,4], backgroundColor:['#06b6d4','#ef4444','#f97316','#22c55e'], borderWidth:0 }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#8b93a7', font:{ size:10 } } } } }
   });
 
-  new Chart(document.getElementById('chartGovResponse'), {
+  window.govResponseChart = new Chart(document.getElementById('chartGovResponse'), {
     type:'line',
     data:{ labels:['W1','W2','W3','W4'],
       datasets:[
@@ -878,49 +961,319 @@ function buildCharts(){
     options:{ scales:{ x:dark, y:dark }, plugins:{ legend:{ labels:{ color:'#8b93a7', font:{ size:10 } } } } }
   });
 
-  new Chart(document.getElementById('chartGovSignal'), {
+  window.govSignalChart = new Chart(document.getElementById('chartGovSignal'), {
     type:'bar',
     data:{ labels:['Kathipara','Anna Nagar','ECR','Velachery'],
       datasets:[{ data:[22,15,30,18], backgroundColor:'#3b82f6', borderRadius:6 }] },
     options:{ scales:{ x:dark, y:dark }, plugins:legendOff }
   });
 
-  new Chart(document.getElementById('chartMonthly'), {
+  window.monthlyChart = new Chart(document.getElementById('chartMonthly'), {
     type:'bar',
-    data:{ labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'],
-      datasets:[{ data:[41,38,45,39,52,48,44], backgroundColor:'#06b6d4', borderRadius:6 }] },
+    data:{ labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[{ data:[0,0,0,0,0,0,0,0,0,0,0,0], backgroundColor:'#06b6d4', borderRadius:6 }] },
     options:{ scales:{ x:dark, y:dark }, plugins:legendOff }
   });
 
-  new Chart(document.getElementById('chartSeverity'), {
+  window.severityChart = new Chart(document.getElementById('chartSeverity'), {
     type:'doughnut',
     data:{ labels:['Minor','Major','Fatal'],
-      datasets:[{ data:[62,29,9], backgroundColor:['#22c55e','#f97316','#ef4444'], borderWidth:0 }] },
+      datasets:[{ data:[0,0,0], backgroundColor:['#22c55e','#f97316','#ef4444'], borderWidth:0 }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#8b93a7', font:{ size:10 } } } } }
   });
 
-  new Chart(document.getElementById('chartTime'), {
+  window.timeChart = new Chart(document.getElementById('chartTime'), {
     type:'line',
-    data:{ labels:['12am','4am','8am','12pm','4pm','8pm'],
-      datasets:[{ data:[8,5,34,22,29,41], borderColor:'#f97316', backgroundColor:'rgba(249,115,22,0.15)', fill:true, tension:0.4 }] },
+    data:{ labels:['Early Morning','Morning','Afternoon','Evening','Night','Late Night'],
+      datasets:[{ data:[0,0,0,0,0,0], borderColor:'#f97316', backgroundColor:'rgba(249,115,22,0.15)', fill:true, tension:0.4 }] },
     options:{ scales:{ x:dark, y:dark }, plugins:legendOff }
   });
 
-  new Chart(document.getElementById('chartAccuracy'), {
+  window.accuracyChart = new Chart(document.getElementById('chartAccuracy'), {
     type:'line',
     data:{ labels:['W1','W2','W3','W4','W5','W6','W7','W8'],
-      datasets:[{ data:[89,90,91,92,93,93.5,94,94.2], borderColor:'#22c55e', tension:0.4 }] },
+      datasets:[{ data:[0,0,0,0,0,0,0,0], borderColor:'#22c55e', tension:0.4 }] },
     options:{ scales:{ x:dark, y:dark }, plugins:legendOff }
   });
 }
+
+const API_BASE = 'http://127.0.0.1:8000';
+console.debug('API_BASE set to', API_BASE);
+
+async function fetchDatasetSummary(){
+  try {
+    const response = await fetch(`${API_BASE}/accidents/summary`);
+    if(!response.ok) throw new Error(`Status ${response.status}`);
+    const summary = await response.json();
+    updateDashboardFromSummary(summary);
+    updateReportCount(summary);
+    return summary;
+  } catch(err) {
+    console.warn('Unable to fetch dataset summary:', err);
+    updateReportCount();
+    return null;
+  }
+}
+
+function updateDashboardFromSummary(summary){
+  if(!summary) return;
+
+  const riskCounts = summary.risk_counts || {};
+  const total = summary.total_records || 0;
+  const low = riskCounts.Low || 0;
+  const medium = riskCounts.Medium || 0;
+  const high = riskCounts.High || 0;
+  const weightedRisk = low * 1 + medium * 2 + high * 3;
+  const avgRisk = total ? weightedRisk / total : 1;
+  const riskLabel = avgRisk < 1.4 ? 'Low' : avgRisk < 2.3 ? 'Medium' : 'High';
+  const confidence = total < 100 ? 60 : total < 500 ? 72 : total < 1500 ? 84 : 92;
+  const riskPercent = Math.min(99, Math.max(12, Math.round(((avgRisk - 1) / 2) * 100)));
+
+  const ringEl = document.getElementById('riskRingValue');
+  const summaryEl = document.getElementById('riskSummary');
+  if(ringEl){
+    ringEl.textContent = `${riskPercent}%`;
+  }
+  if(summaryEl){
+    summaryEl.innerHTML = `Current City Risk: <b>${riskLabel}</b><br>AI Confidence ${confidence}% — based on ${total} historical records`;
+  }
+}
+
+async function fetchGovernmentData(){
+  try {
+    const [hotspotResponse, summary] = await Promise.all([
+      fetch(`${API_BASE}/accidents/hotspots?limit=6`),
+      fetchDatasetSummary(),
+    ]);
+
+    let hotspots = [];
+    if(hotspotResponse.ok){
+      hotspots = await hotspotResponse.json();
+    }
+    populateGovernmentTable(hotspots);
+    updateGovernmentCharts(summary, hotspots);
+  } catch(err) {
+    console.warn('Unable to fetch government dashboard data:', err);
+  }
+}
+
+async function fetchAnalyticsData(){
+  const loadingEl = document.getElementById('accuracySummary');
+  if(loadingEl){
+    loadingEl.textContent = 'Loading main analytics data…';
+  }
+
+  try {
+    const [monthlyResp, severityResp, timeResp] = await Promise.all([
+      fetch(`${API_BASE}/accidents/analytics/monthly`),
+      fetch(`${API_BASE}/accidents/analytics/severity`),
+      fetch(`${API_BASE}/accidents/analytics/timeofday`),
+    ]);
+
+    if(monthlyResp.ok){
+      const monthly = await monthlyResp.json();
+      window.monthlyChart.data.datasets[0].data = monthly.map(item => item.count);
+      window.monthlyChart.update();
+    } else {
+      console.warn('Monthly analytics failed', monthlyResp.status);
+    }
+
+    if(severityResp.ok){
+      const severity = await severityResp.json();
+      const labels = Object.keys(severity);
+      const values = Object.values(severity);
+      window.severityChart.data.labels = labels;
+      window.severityChart.data.datasets[0].data = values;
+      window.severityChart.update();
+    } else {
+      console.warn('Severity analytics failed', severityResp.status);
+    }
+
+    if(timeResp.ok){
+      const timeData = await timeResp.json();
+      const labels = timeData.map(item => item.time);
+      const values = timeData.map(item => item.count);
+      window.timeChart.data.labels = labels;
+      window.timeChart.data.datasets[0].data = values;
+      window.timeChart.update();
+    } else {
+      console.warn('Time-of-day analytics failed', timeResp.status);
+    }
+  } catch(err) {
+    console.warn('Unable to fetch analytics dashboard data:', err);
+    if(loadingEl){
+      loadingEl.textContent = 'Unable to load main analytics data.';
+    }
+  }
+
+  if(loadingEl){
+    loadingEl.textContent = 'Loading accuracy metrics…';
+  }
+  fetchAccuracyAnalytics();
+}
+
+async function fetchAccuracyAnalytics(){
+  try {
+    const accuracyResp = await fetch(`${API_BASE}/accidents/analytics/accuracy`);
+    if(accuracyResp.ok){
+      const accuracy = await accuracyResp.json();
+      window.accuracyChart.data.datasets[0].data = accuracy.trend || [];
+      window.accuracyChart.update();
+      const accEl = document.getElementById('accuracySummary');
+      if(accEl){
+        accEl.textContent = `${accuracy.accuracy ?? 0}% model accuracy based on dataset validation`;
+      }
+    } else {
+      console.warn('Accuracy analytics failed', accuracyResp.status);
+      const accEl = document.getElementById('accuracySummary');
+      if(accEl){
+        accEl.textContent = 'Accuracy metrics unavailable.';
+      }
+    }
+  } catch(err) {
+    console.warn('Unable to fetch accuracy analytics:', err);
+    const accEl = document.getElementById('accuracySummary');
+    if(accEl){
+      accEl.textContent = 'Unable to load accuracy metrics.';
+    }
+  }
+}
+
+async function fetchIncidentHistory(){
+  const timeline = document.getElementById('timeline');
+  if(timeline){
+    timeline.innerHTML = '<div class="tl-empty">Loading incident history from backend...</div>';
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/accidents/history?limit=30`);
+    if(!response.ok) throw new Error(`Status ${response.status}`);
+    historyRecords = await response.json();
+    console.debug('Incident history loaded:', historyRecords.length, 'records');
+    renderTimeline();
+  } catch(err) {
+    console.warn('Unable to fetch incident history:', err);
+    if(timeline){
+      timeline.innerHTML = `<div class="tl-empty">Unable to load incident history: ${err.message}</div>`;
+    }
+    renderTimeline();
+  }
+}
+
+function populateGovernmentTable(hotspots){
+  const tbody = document.getElementById('govHotspotTableBody');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+
+  if(!hotspots || hotspots.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;">No hotspot data available from backend.</td></tr>';
+    return;
+  }
+
+  hotspots.forEach((row)=>{
+    const risk = row.total_accidents >= 22 ? 'Critical' : row.total_accidents >= 14 ? 'Elevated' : 'Moderate';
+    const primary = row.total_accidents >= 20 ? 'Overspeeding / Merge' : row.total_accidents >= 12 ? 'Signal congestion' : 'Visibility / road quality';
+    const action = row.total_accidents >= 18 ? 'Pending Review' : row.total_accidents >= 10 ? 'Actioned' : 'Monitoring';
+    const statusClass = action === 'Actioned' ? 'pill-green' : action === 'Pending Review' ? 'pill-blue' : 'pill-orange';
+    const riskClass = risk === 'Critical' ? 'pill-red' : risk === 'Elevated' ? 'pill-orange' : 'pill-green';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${row.road_name}</b></td>
+      <td><span class="pill ${riskClass}">${risk}</span></td>
+      <td>${primary}</td>
+      <td>${row.total_accidents} accidents</td>
+      <td><span class="pill ${statusClass}">${action}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateGovernmentCharts(summary, hotspots){
+  if(!summary) return;
+  const minor = summary.severity_counts?.Minor || 0;
+  const major = summary.severity_counts?.Major || 0;
+  const fatal = summary.severity_counts?.Fatal || 0;
+
+  if(window.govResourcesChart){
+    window.govResourcesChart.data.datasets[0].data = [
+      Math.max(2, Math.round(summary.total_records / 200)),
+      Math.max(1, Math.round((major + fatal) / 5)),
+      20,
+      Math.max(2, Math.round(summary.hotspot_count / 8)),
+    ];
+    window.govResourcesChart.update();
+  }
+
+  if(window.govSignalChart){
+    const labels = hotspots.slice(0, 4).map(item => item.road_name || 'Unknown');
+    const data = hotspots.slice(0, 4).map(item => item.total_accidents);
+    window.govSignalChart.data.labels = labels.length ? labels : ['No data'];
+    window.govSignalChart.data.datasets[0].data = data.length ? data : [0];
+    window.govSignalChart.update();
+  }
+
+  if(window.govResponseChart){
+    const responseTimes = [
+      Math.max(5, 12 - Math.round((major + fatal) / 2)),
+      Math.max(5, 11 - Math.round((major + fatal) / 2)),
+      Math.max(4, 10 - Math.round((major + fatal) / 2)),
+      Math.max(4, 9 - Math.round((major + fatal) / 2)),
+    ];
+    window.govResponseChart.data.datasets[0].data = responseTimes;
+    window.govResponseChart.update();
+  }
+}
+
+async function runPrediction(){
+  const weather = document.getElementById('predictWeather').value.trim();
+  const traffic = document.getElementById('predictTraffic').value.trim();
+  const road = document.getElementById('predictRoadType').value.trim();
+  const speed = Number(document.getElementById('predictSpeed').value.trim());
+  const time = document.getElementById('predictTimeOfDay').value.trim();
+  const resultEl = document.getElementById('predictResult');
+
+  if(!weather || !traffic || !road || !time || Number.isNaN(speed) || !speed){
+    resultEl.textContent = 'Please fill in weather, traffic, road type, speed, and time.';
+    return;
+  }
+
+  try {
+    resultEl.textContent = 'Running prediction…';
+    const payload = { weather, traffic, road, speed, time };
+    const response = await fetch(`${API_BASE}/predict/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if(!response.ok){
+      const errorText = await response.text();
+      throw new Error(errorText || `Status ${response.status}`);
+    }
+
+    const data = await response.json();
+    resultEl.textContent = `Predicted Risk Level: ${data.prediction}`;
+    document.getElementById('riskSummary').innerHTML = `Current City Risk: <b>${data.prediction}</b><br>Model suggestion based on current input.`;
+    document.getElementById('riskRingValue').textContent = data.prediction === 'High' ? '92%' : data.prediction === 'Medium' ? '68%' : '34%';
+  } catch(err) {
+    resultEl.textContent = `Prediction failed: ${err.message}`;
+    console.warn('Prediction request failed', err);
+  }
+}
+
+document.getElementById('predictBtn').addEventListener('click', runPrediction);
 
 /* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', ()=>{
   initMap();
   animateStats();
-  renderTimeline();
   updateReportCount();
   buildCharts();
+  fetchGovernmentData();
+  fetchLocationOptions();
+  fetchAnalyticsData();
+  fetchIncidentHistory();
 });
 </script>
 </body>

@@ -1,40 +1,53 @@
+from pathlib import Path
+import sys
+from typing import Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-import joblib
-import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from ai.predictor import predict_accident
 
 router = APIRouter(
-    prefix="/predict",
-    tags=["Prediction"]
+    prefix='/predict',
+    tags=['Prediction']
 )
 
-# Load trained model
-model = joblib.load("trained_model.pkl")
 
 class PredictionInput(BaseModel):
-    rainfall_mm: float
-    temperature_c: float
-    speed_limit: int
-    lanes: int
+    weather: Optional[str] = None
+    traffic: Optional[str] = None
+    road: Optional[str] = None
+    speed: Optional[float] = None
+    time: Optional[str] = None
+    road_type: Optional[str] = None
+    road_condition: Optional[str] = None
+    traffic_density: Optional[str] = None
+    average_traffic_speed: Optional[float] = None
+    temperature: Optional[float] = None
+    lanes: Optional[int] = None
 
-@router.post("/")
+
+@router.post('/')
 def predict(data: PredictionInput):
-
-    input_data = pd.DataFrame([{
-        "rainfall_mm": data.rainfall_mm,
-        "temperature_c": data.temperature_c,
-        "speed_limit": data.speed_limit,
-        "lanes": data.lanes
-    }])
-
-    prediction = model.predict(input_data)[0]
-
-    severity = {
-        0: "Minor",
-        1: "Major",
-        2: "Fatal"
-    }
+    result = predict_accident(
+        weather=data.weather,
+        traffic=data.traffic,
+        road=data.road,
+        speed=data.speed,
+        time=data.time,
+        road_type=data.road_type,
+        road_condition=data.road_condition,
+        traffic_density=data.traffic_density,
+        average_traffic_speed=data.average_traffic_speed,
+        temperature=data.temperature,
+        lanes=data.lanes,
+    )
 
     return {
-        "predicted_severity": severity[int(prediction)]
+        'prediction': result,
+        'input': data.dict(),
     }

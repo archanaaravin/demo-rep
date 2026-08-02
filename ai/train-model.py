@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 
 from sklearn.preprocessing import LabelEncoder
@@ -6,8 +7,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 
+BASE_DIR = Path(__file__).resolve().parent
+DATASET_PATH = BASE_DIR / "dataset" / "accidents.csv"
+MODELS_DIR = BASE_DIR / "models"
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
+
 # Read the dataset
-data = pd.read_csv("../dataset/accidents.csv")
+data = pd.read_csv(DATASET_PATH)
 
 print("Original Dataset:\n")
 print(data)
@@ -56,8 +62,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 print("\nTraining Data Shape:", X_train.shape)
 print("Testing Data Shape:", X_test.shape)
 
-model = RandomForestClassifier()
-
+model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
 
 # -----------------------------
@@ -82,17 +87,17 @@ print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
 # Save the trained model
 # -----------------------------
 
-joblib.dump(model, "accident_model.pkl")
+joblib.dump(model, MODELS_DIR / "accident_model.pkl")
 
 print("\n✅ Model saved as accident_model.pkl")
 # -----------------------------
 # Save the Label Encoders
 # -----------------------------
 
-joblib.dump(weather_encoder, "weather_encoder.pkl")
-joblib.dump(traffic_encoder, "traffic_encoder.pkl")
-joblib.dump(road_encoder, "road_encoder.pkl")
-joblib.dump(time_encoder, "time_encoder.pkl")
-joblib.dump(risk_encoder, "risk_encoder.pkl")
+joblib.dump(weather_encoder, MODELS_DIR / "weather_encoder.pkl")
+joblib.dump(traffic_encoder, MODELS_DIR / "traffic_encoder.pkl")
+joblib.dump(road_encoder, MODELS_DIR / "road_encoder.pkl")
+joblib.dump(time_encoder, MODELS_DIR / "time_encoder.pkl")
+joblib.dump(risk_encoder, MODELS_DIR / "risk_encoder.pkl")
 
 print("✅ All encoders saved successfully!")
