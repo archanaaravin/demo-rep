@@ -1318,11 +1318,7 @@ function buildCharts(){
   });
 }
 
-// Use the FastAPI server that delivered this page. The fallback keeps direct
-// local-file previews working during development.
-const API_BASE = window.location.origin && window.location.origin !== 'null'
-  ? window.location.origin
-  : 'http://127.0.0.1:8000';
+const API_BASE = 'http://127.0.0.1:8000';
 console.debug('API_BASE set to', API_BASE);
 
 async function fetchDatasetSummary(){
