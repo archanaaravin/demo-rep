@@ -2,7 +2,11 @@ from pathlib import Path
 import csv
 import json
 import math
+import os
 from datetime import datetime
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -12,6 +16,7 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 DATASET_PATH = BASE_DIR / 'ai' / 'dataset' / 'accidents_v2.csv'
 REPORTS_DIR = BASE_DIR / 'backend' / 'data'
 REPORTS_PATH = REPORTS_DIR / 'reports.json'
+MAPBOX_ACCESS_TOKEN = os.getenv('MAPBOX_ACCESS_TOKEN')
 
 class ReportCreate(BaseModel):
     id: int | None = None
@@ -331,6 +336,76 @@ def _best_location_match(location, stats):
     return None
 
 
+def _mapbox_request(url):
+    if not MAPBOX_ACCESS_TOKEN:
+        raise HTTPException(status_code=503, detail='Mapbox routing is not configured')
+
+    try:
+        with urlopen(url, timeout=15) as response:
+            return json.load(response)
+    except HTTPError as error:
+        try:
+            detail = json.load(error).get('message', 'Mapbox request failed')
+        except Exception:
+            detail = 'Mapbox request failed'
+        raise HTTPException(status_code=502, detail=detail) from error
+    except (URLError, TimeoutError) as error:
+        raise HTTPException(status_code=502, detail='Unable to reach Mapbox routing service') from error
+
+
+def _geocode_location(location):
+    query = urlencode({
+        'q': location,
+        'limit': 1,
+        'proximity': '80.2707,13.0827',
+        'access_token': MAPBOX_ACCESS_TOKEN,
+    })
+    data = _mapbox_request(f'https://api.mapbox.com/search/geocode/v6/forward?{query}')
+    features = data.get('features') or []
+    if not features:
+        raise HTTPException(status_code=400, detail=f'Location not found: {location}')
+
+    feature = features[0]
+    coordinates = (feature.get('geometry') or {}).get('coordinates') or []
+    if len(coordinates) < 2:
+        raise HTTPException(status_code=400, detail=f'Location not found: {location}')
+
+    properties = feature.get('properties') or {}
+    return {
+        'name': properties.get('full_address') or feature.get('place_formatted') or feature.get('name') or location,
+        'latitude': coordinates[1],
+        'longitude': coordinates[0],
+    }
+
+
+def _route_hazards(coordinates, stats):
+    if not coordinates:
+        return []
+
+    hazards = []
+    for entry in stats.values():
+        latitude = entry.get('avg_latitude')
+        longitude = entry.get('avg_longitude')
+        if not latitude or not longitude:
+            continue
+
+        nearest_km = min(
+            _haversine_km(latitude, longitude, point[1], point[0])
+            for point in coordinates[::max(1, len(coordinates) // 120)]
+        )
+        if nearest_km <= 0.75 and entry.get('avg_risk', 0) >= 2:
+            risk = 'High' if entry['avg_risk'] >= 2.5 else 'Medium'
+            hazards.append({
+                'name': entry['name'],
+                'latitude': latitude,
+                'longitude': longitude,
+                'risk': risk,
+                'distance_from_route_km': round(nearest_km, 2),
+            })
+
+    return sorted(hazards, key=lambda item: (item['risk'] != 'High', item['distance_from_route_km']))[:8]
+
+
 @router.get('/locations')
 def get_location_suggestions(query: str = '', limit: int = 50):
     stats = _load_location_stats()
@@ -344,50 +419,62 @@ def get_location_suggestions(query: str = '', limit: int = 50):
 @router.get('/route')
 def get_route_options(from_location: str, to_location: str):
     stats = _load_location_stats()
-    if not stats:
-        raise HTTPException(status_code=404, detail='Route location data unavailable')
-
-    from_key = _best_location_match(from_location, stats)
-    to_key = _best_location_match(to_location, stats)
-    if not from_key or not to_key:
-        raise HTTPException(status_code=400, detail='Unable to match start or destination location from dataset')
-
-    if from_key == to_key:
+    start = _geocode_location(from_location)
+    end = _geocode_location(to_location)
+    if start['latitude'] == end['latitude'] and start['longitude'] == end['longitude']:
         raise HTTPException(status_code=400, detail='Start and destination locations must be different')
 
-    start = stats[from_key]
-    end = stats[to_key]
-    distance = round(_haversine_km(start['avg_latitude'], start['avg_longitude'], end['avg_latitude'], end['avg_longitude']), 1)
-    distance = max(distance, 1.0)
-    avg_risk = round((start['avg_risk'] + end['avg_risk']) / 2, 1)
-    avg_severity = round((start['avg_severity'] + end['avg_severity']) / 2, 1)
-    base_risk = min(95, max(10, avg_risk * 18 + avg_severity * 8))
+    coordinates = f"{start['longitude']},{start['latitude']};{end['longitude']},{end['latitude']}"
+    query = urlencode({
+        'alternatives': 'true',
+        'steps': 'true',
+        'geometries': 'geojson',
+        'overview': 'full',
+        'access_token': MAPBOX_ACCESS_TOKEN,
+    })
+    data = _mapbox_request(f'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/{coordinates}?{query}')
+    directions_routes = data.get('routes') or []
+    if not directions_routes:
+        raise HTTPException(status_code=400, detail='No drivable route found between these locations')
 
-    def route_option(label, multiplier, speed, risk_delta, description):
-        route_distance = round(distance * multiplier + 0.4, 1)
-        eta = int(round((route_distance / max(1, speed)) * 60))
-        risk_value = min(99, max(5, int(base_risk + risk_delta)))
-        risk_label = 'Low' if risk_value < 30 else 'Medium' if risk_value < 60 else 'High'
-        return {
-            'title': label,
-            'distance_km': route_distance,
-            'eta_min': eta,
-            'risk_index': f"{risk_label} ({risk_value}%)",
-            'route_path': f"{from_key} → {to_key}{description}",
-            'start': { 'name': from_key, 'latitude': start['avg_latitude'], 'longitude': start['avg_longitude'] },
-            'end': { 'name': to_key, 'latitude': end['avg_latitude'], 'longitude': end['avg_longitude'] },
-        }
-
-    return {
-        'from': from_key,
-        'to': to_key,
-        'distance_km': distance,
-        'routes': [
-            route_option('AEGIS Safest Route', 1.35, 28, -18, ' via lower-risk corridors'),
-            route_option('Balanced Route', 1.15, 32, 0, ' via moderate-speed streets'),
-            route_option('Direct Fast Route', 1.05, 42, 18, ' via major arterial links'),
+    titles = ['AEGIS Safest Route', 'Balanced Route', 'Direct Fast Route']
+    routes = []
+    for index, route in enumerate(directions_routes[:3]):
+        geometry = (route.get('geometry') or {}).get('coordinates') or []
+        hazards = _route_hazards(geometry, stats)
+        high_risk_count = sum(hazard['risk'] == 'High' for hazard in hazards)
+        medium_risk_count = len(hazards) - high_risk_count
+        safety_score = max(5, min(100, 96 - high_risk_count * 10 - medium_risk_count * 4))
+        risk_label = 'Low' if safety_score >= 80 else 'Medium' if safety_score >= 55 else 'High'
+        steps = [
+            {
+                'instruction': step.get('maneuver', {}).get('instruction') or step.get('name') or 'Continue',
+                'distance_m': round(step.get('distance', 0)),
+                'duration_s': round(step.get('duration', 0)),
+            }
+            for leg in route.get('legs') or []
+            for step in leg.get('steps') or []
         ]
-    }
+        routes.append({
+            'title': titles[index] if index < len(titles) else f'Route {index + 1}',
+            'distance_km': round(route.get('distance', 0) / 1000, 1),
+            'eta_min': max(1, round(route.get('duration', 0) / 60)),
+            'risk_index': f'{risk_label} ({100 - safety_score}% exposure)',
+            'safety_score': safety_score,
+            'route_path': f"{start['name']} → {end['name']}",
+            'start': start,
+            'end': end,
+            'geometry': {'type': 'LineString', 'coordinates': geometry},
+            'steps': steps,
+            'hazards': hazards,
+        })
+
+    while len(routes) < 3:
+        duplicate = dict(routes[-1])
+        duplicate['title'] = titles[len(routes)]
+        routes.append(duplicate)
+
+    return {'from': start, 'to': end, 'routes': routes}
 
 @router.get('/analytics/accuracy')
 def get_model_accuracy(limit: int = 200):
